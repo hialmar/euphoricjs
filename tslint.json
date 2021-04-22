@@ -57,6 +57,8 @@
       "ignore-params"
     ],
     "no-non-null-assertion": true,
+    "no-bitwise": false,
+    "no-trailing-whitespace": false,
     "no-redundant-jsdoc": true,
     "no-switch-case-fall-through": true,
     "no-var-requires": false,
@@ -108,7 +110,8 @@
       "options": [
         "ban-keywords",
         "check-format",
-        "allow-pascal-case"
+        "allow-pascal-case",
+        "allow-snake-case"
       ]
     },
     "whitespace": {
