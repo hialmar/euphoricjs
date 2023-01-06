@@ -11,7 +11,7 @@ public class Euphoric extends Panel implements WindowListener, Runnable, KeyList
 {
     private final String appletName = "Euphoric-Java 0.2";
     private final boolean EMULATE_SOUND = false;
-    private final String TAPE_NAME = "FILLTHEBOX.tap";
+    private final String TAPE_NAME = null;
     private final int[] palette = { 0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFFFFFF00, 0xFF0000FF, 0xFFFF00FF, 0xFF00FFFF, 0xFFFFFFFF };
 
     private Frame frame;
