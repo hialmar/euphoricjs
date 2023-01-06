@@ -1,27 +1,26 @@
 
-import java.applet.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import javax.sound.sampled.*;
 
-public class Euphoric extends Applet implements WindowListener, Runnable, ImageObserver, KeyListener
+public class Euphoric extends Panel implements WindowListener, Runnable, KeyListener
 {
     private final String appletName = "Euphoric-Java 0.2";
     private final boolean EMULATE_SOUND = false;
-    private final int palette[] = { 0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFFFFFF00, 0xFF0000FF, 0xFFFF00FF, 0xFF00FFFF, 0xFFFFFFFF };
+    private final String TAPE_NAME = "FILLTHEBOX.tap";
+    private final int[] palette = { 0xFF000000, 0xFFFF0000, 0xFF00FF00, 0xFFFFFF00, 0xFF0000FF, 0xFFFF00FF, 0xFF00FFFF, 0xFFFFFFFF };
 
     private Frame frame;
-    private int width, height;
 
-    private Thread thread;
     private long frameTime=0;
     private boolean initialized = false;
     private boolean exit = false;
 
-    private int pixelBuffer[] = new int[ 240 * 224 ];
+    private final int[] pixelBuffer = new int[ 240 * 224 ];
     private Image bufferImage;
 
     private SourceDataLine waveOutA, waveOutB, waveOutC;
@@ -32,7 +31,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
     private boolean drawBorders = true;
     private int frameSkip = 0;
 
-    public static void main( String args[] )
+    public static void main(String[] args)
     {
         Euphoric oric = new Euphoric();
 
@@ -61,8 +60,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
     public boolean imageUpdate( Image image, int inforegisterP, int x, int y, int width, int height )
     {
-        if( inforegisterP == ImageObserver.ALLBITS ) return false;
-        return true;
+      return inforegisterP != ImageObserver.ALLBITS;
     }
 
 //*****************************************************************************************************************
@@ -75,7 +73,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         {
             int line = matrixLocation[ keycode ] >> 3 ;
             int column = matrixLocation[ keycode ] & 7 ;
-            
+
             if( keycode == KeyEvent.VK_SHIFT && event.getKeyLocation() == KeyEvent.KEY_LOCATION_RIGHT)
             {
                 line = 7 ;
@@ -87,39 +85,28 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         }
         else
         {
-            switch( keycode )
-            {
-                case KeyEvent.VK_F4:
-                    if( frameSkip > 0 ) frameSkip-- ;
-                    break;
-                
-                case KeyEvent.VK_F5:
-                    frameSkip ++ ;
-                    break;
-                
-                case KeyEvent.VK_F6:    // RESET
-                    reset = true;
-                    nmi = true;
-                    break;
-
-                case KeyEvent.VK_F7:    // NMI
-                    nmi = true;
-                    break;
-                
-                case KeyEvent.VK_F10:   // exit
-                    exit = true;
-                    break;
-                
-                case KeyEvent.VK_F11:   // 1x scale
-                    scale = 1;
-                    drawBorders = true;
-                    break;
-                
-                case KeyEvent.VK_F12:   // 2x scale
-                    scale = 2;
-                    drawBorders = true;
-                    break;
+          switch (keycode) {
+            case KeyEvent.VK_F4 -> {
+              if (frameSkip > 0) frameSkip--;
             }
+            case KeyEvent.VK_F5 -> frameSkip++;
+            case KeyEvent.VK_F6 -> {    // RESET
+              reset = true;
+              nmi = true;
+            }
+            case KeyEvent.VK_F7 ->    // NMI
+              nmi = true;
+            case KeyEvent.VK_F10 ->   // exit
+              exit = true;
+            case KeyEvent.VK_F11 -> {   // 1x scale
+              scale = 1;
+              drawBorders = true;
+            }
+            case KeyEvent.VK_F12 -> {   // 2x scale
+              scale = 2;
+              drawBorders = true;
+            }
+          }
         }
     }
 
@@ -131,7 +118,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         {
             int line = matrixLocation[ keycode ] >> 3 ;
             int column = matrixLocation[ keycode ] & 7 ;
-            
+
             if( keycode == KeyEvent.VK_SHIFT && event.getKeyLocation() == KeyEvent.KEY_LOCATION_RIGHT)
             {
                 line = 7 ;
@@ -148,13 +135,9 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 //*****************************************************************************************************************
 // Class Applet
 
-    public void init()
+  public void start()
     {
-    }
-
-    public void start()
-    {
-        thread = new Thread( this );
+      Thread thread = new Thread(this);
         thread.start();
     }
 
@@ -175,11 +158,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 //*****************************************************************************************************************
 // Class Component
 
-    public void repaint( Graphics gfx )
-    {
-    }
-
-//*****************************************************************************************************************
+  //*****************************************************************************************************************
 // Interface Runnable
 
     public void run()
@@ -203,7 +182,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         {
             calculateFrame( 1 + frameSkip );
 
-            System.out.println(this.registerPC);
+            //System.out.println(this.registerPC);
 
             Graphics gfx = getGraphics();
             if( gfx != null )
@@ -241,14 +220,11 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
     private void errorMessage(String msg)
     {
-        if( frame == null )
-            showStatus( msg );
-        else
-            System.out.println( msg );
+        System.out.println( msg );
     }
 
 
-    private int[][] oricKeyboard = {
+    private final int[][] oricKeyboard = {
         { KeyEvent.VK_3 , KeyEvent.VK_X, KeyEvent.VK_1, 0 , KeyEvent.VK_V, KeyEvent.VK_5, KeyEvent.VK_N, KeyEvent.VK_7 },
         { KeyEvent.VK_D , KeyEvent.VK_Q, KeyEvent.VK_ESCAPE, 0 , KeyEvent.VK_F, KeyEvent.VK_R, KeyEvent.VK_T, KeyEvent.VK_J },
         { KeyEvent.VK_C , KeyEvent.VK_2, KeyEvent.VK_Z, KeyEvent.VK_CONTROL , KeyEvent.VK_4, KeyEvent.VK_B, KeyEvent.VK_6, KeyEvent.VK_M },
@@ -259,15 +235,12 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         { KeyEvent.VK_EQUALS , 0, KeyEvent.VK_ENTER, 0 /* RIGHT SHIFT */, KeyEvent.VK_SLASH, KeyEvent.VK_0, KeyEvent.VK_L, KeyEvent.VK_8 }
     };
 
-    private byte[] matrixLocation = new byte[256];
-    private byte[] keyboardMatrix = new byte[8];
-    
+    private final byte[] matrixLocation = new byte[256];
+    private final byte[] keyboardMatrix = new byte[8];
+
     private void keyboardInitialize()
     {
-        for (int i = 0 ; i < matrixLocation.length ; i ++ )
-        {
-            matrixLocation[ i ] = -1;
-        }
+        Arrays.fill(matrixLocation, (byte) -1);
         for( int line = 0 ; line < 8 ; line ++ )
         {
             for (int column = 0 ; column < 8 ; column ++ )
@@ -284,8 +257,8 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
 
 /* memory state */
-    private byte[] rom = new byte[ 16*1024 ];
-    private byte[] ram = new byte[ 48*1024 ];
+    private final byte[] rom = new byte[ 16*1024 ];
+    private final byte[] ram = new byte[ 48*1024 ];
 /* ULA state */
     private boolean graph_mode = false;
     private int frame_count = 0;
@@ -299,7 +272,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
     private boolean viaIRQ;
 /* PSG state */
     private int psgIndex=15;
-    private byte[] psgRegs = new byte[ 16 ];
+    private final byte[] psgRegs = new byte[ 16 ];
     private boolean psgBC1 = false;
     private boolean psgBDIR = false;
     private int psgA_period, psgB_period, psgC_period, psgN_period, psgE_period;
@@ -311,24 +284,23 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
     private int psgA_counter, psgB_counter, psgC_counter, psgN_counter, psgE_counter;
     private int psgA_output, psgB_output, psgC_output, psgN_output;
     private int psgN_shifter;
-    private byte[] psgA_chanel = new byte[1248];   // need 1248 values per Frame
-    private byte[] psgB_chanel = new byte[1248];   // need 1248 values per Frame
-    private byte[] psgC_chanel = new byte[1248];   // need 1248 values per Frame
+    private final byte[] psgA_chanel = new byte[1248];   // need 1248 values per Frame
+    private final byte[] psgB_chanel = new byte[1248];   // need 1248 values per Frame
+    private final byte[] psgC_chanel = new byte[1248];   // need 1248 values per Frame
     private int psgOutIndex = 0;
 /* audio state */
     private final float audioFreq = (float)22050;
     private final byte[] volume = { 0, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64, 90,(byte)128,(byte)181,(byte)255 };
-    private byte[] audioBufA = new byte[440];  // need 440 bytes per Frame at 22050 Hz
-    private byte[] audioBufB = new byte[440];  // need 440 bytes per Frame at 22050 Hz
-    private byte[] audioBufC = new byte[440];  // need 440 bytes per Frame at 22050 Hz
+    private final byte[] audioBufA = new byte[440];  // need 440 bytes per Frame at 22050 Hz
+    private final byte[] audioBufB = new byte[440];  // need 440 bytes per Frame at 22050 Hz
+    private final byte[] audioBufC = new byte[440];  // need 440 bytes per Frame at 22050 Hz
 /* keyboard state */
     private int kbdSelectedColumns = 0;
     private int kbdSelectedLine = 0;
     private boolean kbdKeyPressed;
 /* tape emulation */
     private boolean tapeBoot = false;
-    private boolean tapeLoading = true;
-    private int tapeFileNameAddr = 0x27F;
+  private int tapeFileNameAddr = 0x27F;
     private int tapeNameFoundAddr = 0x293;
     private int tapeHeaderAddr = 0x2A7;
     private InputStream tapeStream;
@@ -338,7 +310,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
     private boolean reset = false;
     private int registerPC;
     private byte registerA=0,registerX=0,registerY=0;
-    private byte registerS = (byte)0xFF; 
+    private byte registerS = (byte)0xFF;
     private byte registerP;
 
     private InputStream openFile( String name )
@@ -349,13 +321,13 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         {
             if( frame != null )
             {
-                stream = new FileInputStream( new File( name ) );
+                stream = new FileInputStream( name );
             }
             else
             {
-                stream = new URL( getCodeBase(), name ).openStream();
+                stream = new URL( name ).openStream();
             }
-            
+
             return new BufferedInputStream( stream );
         }
         catch( Exception e)
@@ -366,15 +338,15 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
     }
 
 
-    private void loadROM( String name, byte dest[])
+    private void loadROM(String name, byte[] dest)
     throws Exception
     {
         InputStream stream = openFile( name );
-        
+
         int bytesRead = 0;
         while( bytesRead < dest.length )
         {
-            if( frame == null ) showStatus("Loading ROM : "+bytesRead+" bytes");
+            if( frame == null ) System.out.println("Loading ROM : "+bytesRead+" bytes");
 
             bytesRead += stream.read( dest, bytesRead, dest.length-bytesRead );
         }
@@ -392,12 +364,12 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             return false;
         }
 
-        if( frame == null )
+        if( TAPE_NAME != null )
         {
-            showStatus(appletName);
+            System.out.println(appletName);
             try
             {
-                String filename = getParameter("tape");
+                String filename = TAPE_NAME;
                 if (filename!=null)
                 {
                     tapeBoot = true;
@@ -408,7 +380,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             {
             }
         }
-        
+
         if( deek(0xFFFC) == 0xF88F )
         {
             if (tapeBoot) rom[ 0x0592 ] = 2;
@@ -468,7 +440,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             case 0xC5A2:
                 tapeEnterCommand();
                 break;
-                
+
             case 0xE735:
             case 0xE696:
                 tapeReadSynchro();
@@ -478,13 +450,13 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             case 0xE630:
                 tapeReadByte();
                 break;
-            
-/*            
+
+/*
             case 0xE75E:
             case 0xE6BE:
                 tapeWriteSynchro();
                 break;
-            
+
             case 0xE65E:
             case 0xE5C6:
                 tapeWriteByte();
@@ -499,7 +471,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             registerPC = 0xE6FB;
         else
             registerPC = 0xE65D;
-        
+
         try
         {
             if( tapeStream != null )
@@ -508,7 +480,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         catch( Exception e )
         {
         }
-        
+
         registerP &= ~3; // Z=C=0
         if( registerA == 0 ) registerP |= 2;
     }
@@ -517,7 +489,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
     {
         boolean synchroFound = false;
         boolean alreadyOpenedOnce = false;
-        
+
         if( deek(0xFFFC) == 0xF88F )
             registerPC = 0xE6FB;
         else
@@ -525,8 +497,9 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
         registerX = 0;
         registerP |= 2 ;   // Z=1
-        
-        if( !tapeLoading && tapeStream != null )
+
+      boolean tapeLoading = true;
+      if( !tapeLoading && tapeStream != null )
         {
             try
             {
@@ -537,7 +510,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             }
             tapeStream = null;
         }
-        
+
         while( !synchroFound )
         {
             if( tapeStream != null && tapeLoading)
@@ -545,7 +518,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                 try
                 {
                     int val = tapeStream.read();
-                
+
                     if( val == 0x16 ) synchroFound = true;
 
                     if( val == -1 )
@@ -561,15 +534,15 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             else
             {
                 if( alreadyOpenedOnce ) return;
-                
+
                 int nameLength = 0;
                 while( ram[ tapeFileNameAddr + nameLength ] != 0 )
                     nameLength ++;
-                
+
                 String name = new String( ram, tapeFileNameAddr, nameLength );
                 tapeStream = openFile( name );
                 if( tapeStream == null ) return;
-                
+
                 alreadyOpenedOnce = true;
                 ram[ tapeFileNameAddr ] = 0;
             }
@@ -610,13 +583,13 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                         false // little-endian byte order : useless
                                         );
                 DataLine.Info info = new DataLine.Info( SourceDataLine.class, format, bufferSize );
-              
+
                 waveOutA = (SourceDataLine)AudioSystem.getLine( info );
                 waveOutA.open( format );
-                
+
                 waveOutB = (SourceDataLine)AudioSystem.getLine( info );
                 waveOutB.open( format );
-                
+
                 waveOutC = (SourceDataLine)AudioSystem.getLine( info );
                 waveOutC.open( format );
             }
@@ -625,14 +598,14 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                 errorMessage("Unable to get an audio line...");
                 return;
             }
-              
+
             for(int i=0 ; i < audioBufA.length ; i++ )
             {
                 audioBufA[ i ] = 0;
                 audioBufB[ i ] = 0;
                 audioBufC[ i ] = 0;
             }
-            
+
             waveOutA.write( audioBufA, 0 , audioBufA.length );
             waveOutB.write( audioBufB, 0 , audioBufB.length );
             waveOutC.write( audioBufC, 0 , audioBufC.length );
@@ -643,7 +616,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         }
     }
 
-    
+
     private void calculateFrame( int nbFrames )
     {
         int psgCounter=16;
@@ -663,14 +636,14 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
         boolean flagI = ( registerP & 4 ) != 0;
         boolean flagC = ( registerP & 1 ) != 0;
         int k;
-        
+
         while( nbFrames != 0 )
         {
             nbFrames --;
             if( EMULATE_SOUND ) writeAudio();
             else timeSynchro();
             psgOutIndex = 0;
-            
+
             int column = 0;
             int dot_ink, dot_paper, pattern;
             int[] screen = pixelBuffer;
@@ -693,7 +666,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
                 if( nbFrames == 0 && !blank_lines && column < 40 )
                 {
-                
+
                     int videobyte = ram[ line_addr + column ];
                     pattern = videobyte;
 
@@ -768,7 +741,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                     line ++ ;
 
                     if( line < 224 ) {
-                        
+
                         charline = line & 7;
                         column = 0 ; ink = palette[7] ; paper = palette[0];
                         blink = false ; blink_mask = 0x3F ; dbl_height = false;
@@ -814,7 +787,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                             if( flagI ) tmp += 4;
                             if( flagZ ) tmp += 2;
                             if( flagC ) tmp += 1;
-                        
+
                             ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)( pc >> 8 );
                             ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)pc ;
                             ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)( tmp & ~0x10 );
@@ -848,7 +821,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                             if( flagI ) tmp += 4;
                             if( flagZ ) tmp += 2;
                             if( flagC ) tmp += 1;
-                        
+
                             ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)( pc >> 8 );
                             ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)pc ;
                             ram[ 0x100 + ( 0xFF & (int)s-- ) ] = tmp ;
@@ -862,7 +835,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                     if( ( opcode & 0xC0 ) == 0x80 )
                     {
                         remaining_cycles = 1;
-    
+
                         switch( opcode & 0xFF )
                         {
                             case 0x81: // STA Indexed X Indirect
@@ -870,7 +843,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 poke( ram[ zp_address ] & 0xFF | ( ram[ zp_address + 1 ] << 8 ) & 0xFF00 , a );
                                 remaining_cycles = 5 ;
                                 break;
-                        
+
                             case 0x84: // STY Zero page
                                 ram[ peek( pc++ ) & 0xFF ] = y;
                                 remaining_cycles = 2 ;
@@ -880,12 +853,12 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 ram[ peek( pc++ ) & 0xFF ] = a;
                                 remaining_cycles = 2 ;
                                 break;
-                            
+
                             case 0x86: // STX Zero page
                                 ram[ peek( pc++ ) & 0xFF ] = x;
                                 remaining_cycles = 2 ;
                                 break;
-                            
+
                             case 0x88: // DEY
                                 y--;
                                 flagN = y < 0;
@@ -897,7 +870,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagN = a < 0;
                                 flagZ = a == 0;
                                 break;
-                            
+
                             case 0x8C: // STY Absolute
                                 poke( peek( pc++ ) & 0xFF | ( peek( pc++ ) << 8 ) & 0xFF00 , y );
                                 remaining_cycles = 3;
@@ -927,7 +900,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 poke( ( ram[ zp_address ] & 0xFF | ( ram[ zp_address + 1 ] << 8 ) & 0xFF00 ) + ( 0xFF & y ) , a );
                                 remaining_cycles = 5;
                                 break;
-                            
+
                             case 0x94: // STY Page Zero Indexed X
                                 ram[ 0xFF & ( peek( pc++ ) + x ) ] = y ;
                                 remaining_cycles = 3;
@@ -937,12 +910,12 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 ram[ 0xFF & ( peek( pc++ ) + x ) ] = a ;
                                 remaining_cycles = 3;
                                 break;
-                            
+
                             case 0x96: // STX Page Zero Indexed Y
                                 ram[ 0xFF & ( peek( pc++ ) + y ) ] = x ;
                                 remaining_cycles = 3;
                                 break;
-                            
+
                             case 0x98: // TYA
                                 a = y;
                                 flagN = a < 0;
@@ -953,7 +926,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 poke ( ( peek( pc++ ) & 0xFF ) + ( ( peek( pc++ ) & 0xFF ) << 8 ) + ( y & 0xFF ) , a );
                                 remaining_cycles = 4 ;
                                 break;
-                            
+
                             case 0x9A: // TXS
                                 s = x;
                                 break;
@@ -962,7 +935,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 poke ( ( peek( pc++ ) & 0xFF ) + ( ( peek( pc++ ) & 0xFF ) << 8 ) + ( x & 0xFF ) , a );
                                 remaining_cycles = 4 ;
                                 break;
-                            
+
                             case 0xA0:  // LDY Immediate
                                 y = peek( pc++ );
                                 flagN = y < 0;
@@ -976,7 +949,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagZ = a == 0;
                                 remaining_cycles = 5;
                                 break;
-                       
+
                             case 0xA2:  // LDX Immediate
                                 x = peek( pc++ );
                                 flagN = x < 0;
@@ -996,14 +969,14 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagZ = a == 0;
                                 remaining_cycles = 2;
                                 break;
-                            
+
                             case 0xA6: // LDX Zero page
                                 x = ram[ 0xFF & peek( pc++ ) ];
                                 flagN = x < 0;
                                 flagZ = x == 0;
                                 remaining_cycles = 2;
                                 break;
-                            
+
                             case 0xA8:  // TAY
                                 y = a;
                                 flagN = y < 0;
@@ -1021,7 +994,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagN = x < 0;
                                 flagZ = x == 0;
                                 break;
-                            
+
                             case 0xAC:  // LDY Absolute
                                 y = peek( peek( pc++ ) & 0xFF | ( peek( pc++ ) << 8 ) & 0xFF00 );
                                 flagN = y < 0;
@@ -1061,7 +1034,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagN = a < 0;
                                 flagZ = a == 0;
                                 break;
-                            
+
                             case 0xB4: // LDY Page Zero Indexed X
                                 y = ram[ 0xFF & ( peek( pc++ ) + x ) ];
                                 flagN = y < 0;
@@ -1075,14 +1048,14 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagZ = a == 0;
                                 remaining_cycles = 3;
                                 break;
-                            
+
                             case 0xB6: // LDX Page Zero Indexed Y
                                 x = ram[ 0xFF & ( peek( pc++ ) + y ) ];
                                 flagN = x < 0;
                                 flagZ = x == 0;
                                 remaining_cycles = 3;
                                 break;
-                            
+
                             case 0xB8: // CLV
                                 flagV = false;
                                 break;
@@ -1095,7 +1068,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagN = a < 0;
                                 flagZ = a == 0;
                                 break;
-                            
+
                             case 0xBA: // TSX
                                 x = s;
                                 flagN = x < 0;
@@ -1119,7 +1092,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagN = a < 0;
                                 flagZ = a == 0;
                                 break;
-                            
+
                             case 0xBE: // LDX Absolute Indexed Y
                                 address = ( peek( pc++ ) & 0xFF ) + ( y & 0xFF );
                                 remaining_cycles = address > 255 ? 4 : 3 ;
@@ -1148,7 +1121,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 tmp = ram[ peek( pc++ ) & 0xFF ];
                                 remaining_cycles = 2 ;
                                 break;
-                            
+
                             case 0x06: // RMW Zero page
                                 address = peek( pc++ ) & 0xFF ;
                                 tmp = ram[ address ];
@@ -1160,14 +1133,14 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 tmp = peek( pc++ );
                                 remaining_cycles = 1 ;
                                 break;
-                       
+
                             case 0x0D: // Absolute
                                 address = deek( pc );
                                 pc+=2;
                                 tmp = peek( address );
                                 remaining_cycles = 3;
                                 break;
-                            
+
                             case 0x0E: // RMW Absolute
                                 address = deek( pc );
                                 pc+=2;
@@ -1175,33 +1148,33 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 remaining_cycles = 5;
                                 rmw = true;
                                 break;
-                            
+
                             case 0x11: // Indirect Indexed Y
                                 zp_address = 0xFF & peek( pc++ ) ;
                                 address = ( ram[ zp_address ] & 0xFF | ( ram[ zp_address + 1 ] << 8 ) & 0xFF00 ) + ( 0xFF & y ) ;
                                 tmp = peek( address );
                                 remaining_cycles = 4; // +1 if addition of Y changes page
                                 break;
-                            
+
                             case 0x15: // Page Zero Indexed X
                                 tmp = ram[ 0xFF & ( peek( pc++ ) + x ) ];
                                 remaining_cycles = 3;
                                 break;
-                            
+
                             case 0x16: // RMW Page Zero Indexed X
                                 address = ( peek( pc++ ) + x ) & 0xFF ;
                                 tmp = ram[ address ];
                                 remaining_cycles = 5;
                                 rmw = true;
                                 break;
-                            
+
                             case 0x19: // Absolute Indexed Y
                                 address = ( peek( pc++ ) & 0xFF ) + ( y & 0xFF );
                                 remaining_cycles = address > 255 ? 4 : 3 ;
                                 address = ( ( peek( pc++ ) << 8 ) + address ) & 0xFFFF ;
                                 tmp = peek( address );
                                 break;
-                            
+
                             case 0x1E: // RMW Absolute Indexed X
                                 rmw = true;
                             case 0x1D: // Absolute Indexed X
@@ -1226,7 +1199,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 if( flagI ) tmp += 4;
                                 if( flagZ ) tmp += 2;
                                 if( flagC ) tmp += 1;
-                        
+
                                 ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)( ( pc + 1 ) >> 8 ) ;
                                 ram[ 0x100 + ( 0xFF & (int)s-- ) ] = (byte)( pc + 1 ) ;
                                 ram[ 0x100 + ( 0xFF & (int)s-- ) ] = tmp ;
@@ -1387,7 +1360,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
                             case 0xEA:  // NOP
                                 break;
-    
+
                             case 0x2C:  // BIT Absolute
                                 tmp = peek( peek( pc++ ) & 0xFF | ( peek( pc++ ) << 8 ) & 0xFF00 );
                                 flagZ = ( a & tmp ) == 0 ;
@@ -1484,7 +1457,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                             case 0x18:  // CLC
                                 flagC = false;
                                 break;
-    
+
                             case 0x38:  // SEC
                                 flagC = true;
                                 break;
@@ -1492,7 +1465,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                             case 0x58:  // CLI
                                 flagI = false;
                                 break;
-    
+
                             case 0x78:  // SEI
                                 flagI = true;
                                 break;
@@ -1526,7 +1499,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                 flagC = ( registerP & 1 ) != 0;
                                 break;
                             }
-                        } 
+                        }
                         else if( rmw )
                         {
                             switch( opcode & 0xE0 )
@@ -1535,7 +1508,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                     flagC = tmp < 0;
                                     tmp2 = (byte)( tmp << 1 );
                                     break;
-    
+
                                 case 0x20: // ROL
                                     tmp2 = (byte)( tmp << 1 );
                                     if( flagC ) tmp2 |= 1;
@@ -1546,7 +1519,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                     flagC = ( tmp & 1 ) != 0;
                                     tmp2 = (byte)( ( tmp & 0xFF ) >> 1 );
                                     break;
-    
+
                                 case 0x60: // ROR
                                     tmp2 = (byte)( ( tmp & 0xFF ) >> 1 );
                                     if( flagC ) tmp2 |= 0x80;
@@ -1564,14 +1537,14 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
                             flagN = tmp2 < 0;
                             flagZ = tmp2 == 0 ;
-    
+
                             switch( opcode & 0x1F )
                             {
                                 case 0x06:
                                 case 0x16:
                                     ram[ address ] = tmp2;
                                     break;
-    
+
                                 case 0x0E:
                                 case 0x1E:
                                     poke( address , tmp2 );
@@ -1587,19 +1560,19 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                     flagN = a < 0;
                                     flagZ = a == 0;
                                     break;
-    
+
                                 case 0x20: // AND
                                     a &= tmp;
                                     flagN = a < 0;
                                     flagZ = a == 0;
                                     break;
-    
+
                                 case 0x40: // EOR
                                     a ^= tmp;
                                     flagN = a < 0;
                                     flagZ = a == 0;
                                     break;
-    
+
                                 case 0x60: // ADC
                                     if( flagD )
                                     {
@@ -1631,7 +1604,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                         a = (byte)k;
                                         flagZ = a == 0;
                                         flagN = a < 0;
-                                    }   
+                                    }
                                     break;
 
                                 case 0xC0: // CMP
@@ -1639,7 +1612,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                                     flagZ = a == tmp ;
                                     flagC = ( 0xFF & (int)tmp ) <= ( 0xFF & (int)a );
                                     break;
-    
+
                                 case 0xE0: // SBC
                                     if( flagD )
                                     {
@@ -1833,9 +1806,9 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                             pc += 2;
                             break;
 */
-                        
 
-                if( viaT1overflow ) 
+
+                if( viaT1overflow )
                 {
                     if( viaT1running )
                     {
@@ -2039,7 +2012,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                 viaIFR &= ~0x40;
                 viaIRQ = ( viaIER & viaIFR ) != 0;
                 break;
-            
+
             case 6: // T1L_L
                 viaT1L = viaT1L & 0xFF00 | val & 0x00FF;
                 break;
@@ -2105,7 +2078,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                 break;
         }
 
-    } 
+    }
 
     private void writePSG( int val )
     {
@@ -2113,31 +2086,31 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
         switch( psgIndex )
         {
-    
+
             case 0:     // PeriodA (low)
                 psgA_period = psgA_period & 0x0F00 | val & 0xFF;
                 break;
-    
+
             case 1:     // PeriodA (high)
                 psgA_period = psgA_period & 0xFF | (val << 8) & 0x0F00;
                 break;
-    
+
             case 2:     // PeriodB (low)
                 psgB_period = psgB_period & 0x0F00 | val & 0xFF;
                 break;
-    
+
             case 3:     // PeriodB (high)
                 psgB_period = psgB_period & 0xFF | (val << 8) & 0x0F00;
                 break;
-    
+
             case 4:     // PeriodC (low)
                 psgC_period = psgC_period & 0x0F00 | val & 0xFF;
                 break;
-    
+
             case 5:     // PeriodC (high)
                 psgC_period = psgC_period & 0xFF | (val << 8) & 0x0F00;
                 break;
-        
+
             case 6:     // PeriodN
                 psgN_period = val & 0x1F;
                 break;
@@ -2152,30 +2125,30 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                 psgIOA_dir = ( val & 64 ) != 0;
 //              psgIOB_dir = ( val & 128 ) != 0;
                 break;
-    
+
             case 8:     // AmplitudeA
                 psgA_envelop = ( val & 0x10 ) != 0;
                 psgA_amplitude = psgA_envelop ? psgE_amplitude : val & 15;
                 break;
-    
+
             case 9:     // AmplitudeB
                 psgB_envelop = ( val & 0x10 ) != 0;
                 psgB_amplitude = psgB_envelop ? psgE_amplitude : val & 15;
                 break;
-    
+
             case 10:    // AmplitudeC
                 psgC_envelop = ( val & 0x10 ) != 0;
                 psgC_amplitude = psgC_envelop ? psgE_amplitude : val & 15;
                 break;
-    
+
             case 11:    // Envelop period (low)
                 psgE_period = psgE_period & 0xFF00 | val & 0xFF ;
                 break;
-    
+
             case 12:    // Envelop period (high)
                 psgE_period = psgE_period & 0xFF | (val << 8) & 0xFF00 ;
                 break;
-    
+
             case 13:    // Envelop shape
                 psgE_hold = ( val & 1 ) != 0 ;
                 psgE_alternate = ( val & 2 ) != 0 ;
@@ -2197,9 +2170,9 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                     boolean keyPressed = (keyboardMatrix[ kbdSelectedLine ] & kbdSelectedColumns) != 0 ;
                 }
                 break;
-    
+
             case 15:    // IO Port B
-                break;  
+                break;
         }
     }
 
@@ -2210,28 +2183,28 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
             psgA_counter ++;
             if( psgA_counter >= psgA_period )
             {
-                // output is inversed every period, 
+                // output is inversed every period,
                 // thus A_period is in fact half the period of the tone
-                psgA_output = ~psgA_output;     
+                psgA_output = ~psgA_output;
                 psgA_counter = 0;
             }
 
             psgB_counter ++;
-            if( psgB_counter >= psgB_period ) 
+            if( psgB_counter >= psgB_period )
             {
                 psgB_output = ~psgB_output;
                 psgB_counter = 0;
             }
 
             psgC_counter ++;
-            if( psgC_counter >= psgC_period ) 
+            if( psgC_counter >= psgC_period )
             {
                 psgC_output = ~psgC_output;
                 psgC_counter = 0;
             }
 
             psgN_counter ++;
-            if( psgN_counter >= psgN_period ) 
+            if( psgN_counter >= psgN_period )
             {
                 psgN_output = ( psgN_shifter & 1 ) != 0 ? -1 : 0;
                 psgN_counter = 0;
@@ -2241,16 +2214,16 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
 
            // computing envelop amplitude, and thus each chanel's amplitude
            psgE_counter++;
-           if( psgE_counter >= psgE_period ) 
+           if( psgE_counter >= psgE_period )
            {
                int amplitude = psgE_amplitude;
                psgE_counter = 0;
                if( psgE_countup ) amplitude ++;
                if( psgE_countdown ) amplitude --;
-               if( amplitude==16 || amplitude==-1 ) 
+               if( amplitude==16 || amplitude==-1 )
                {
 /* graphical representation of envelopes
- * 
+ *
  *  00xx		\__________________________________
  *
  *  01xx		/|_________________________________
@@ -2272,7 +2245,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
  *  1111		/|_________________________________
  *
  */
-                   if( !psgE_continue ) 
+                   if( !psgE_continue )
                    {
                        psgE_countup = psgE_countdown = false;
                        psgE_amplitude = 0;
@@ -2280,7 +2253,7 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                    else if( psgE_hold )
                    {
                        psgE_countup = psgE_countdown = false;
-                       if( psgE_alternate ) 
+                       if( psgE_alternate )
                            psgE_amplitude = psgE_attack ? 0 : 15;
                        else
                            psgE_amplitude = psgE_attack ? 15 : 0;
@@ -2291,13 +2264,13 @@ public class Euphoric extends Applet implements WindowListener, Runnable, ImageO
                        psgE_countdown = !psgE_countdown;
                        psgE_amplitude= psgE_countup ? 0 : 15;
                    }
-                   else 
+                   else
                    {
                        psgE_amplitude = amplitude & 15;
                    }
                }
                else psgE_amplitude = amplitude;
-    
+
                if (psgA_envelop) psgA_amplitude = psgE_amplitude;
                if (psgB_envelop) psgB_amplitude = psgE_amplitude;
                if (psgC_envelop) psgC_amplitude = psgE_amplitude;
