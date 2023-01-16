@@ -1,6 +1,8 @@
 import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 
+import { NgxIndexedDBService } from 'ngx-indexed-db';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -8,8 +10,17 @@ import {HttpClient} from '@angular/common/http';
 })
 export class AppComponent implements AfterViewInit {
 
-  constructor(private httpClient: HttpClient) {
+  constructor(private httpClient: HttpClient, private dbService: NgxIndexedDBService) {
     this.loadRom();
+
+    this.dbService
+      .add('people', {
+        name: `Bruce Wayne`,
+        email: `bruce@wayne.com`,
+      })
+      .subscribe((key) => {
+        console.log('key: ', key);
+      });
   }
   title = 'Euphoric-JS 0.1';
   @ViewChild('myCanvas') canvasRef: ElementRef;
@@ -390,17 +401,9 @@ export class AppComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.ctx = this.canvasRef.nativeElement.getContext('2d');
-    this.drawBorder();
-    this.drawPoint();
   }
 
-  startDrawing(evt: MouseEvent): void {
-    this.drawing = true;
-  }
 
-  stopDrawing(evt: MouseEvent): void {
-    this.drawing = false;
-  }
 
   keepDrawing(evt: MouseEvent): void {
     if (!this.drawing) { return; }
@@ -429,30 +432,6 @@ export class AppComponent implements AfterViewInit {
     this.ctx.putImageData(imageData, x, y);
   }
 
-  clickMe(): void {
-    this.ctx.fillStyle = 'rgb(200, 0, 0)';
-    this.ctx.fillRect(10, 10, 50, 50);
-    this.ctx.fillStyle = 'rgba(0, 0, 200, 0.5)';
-    this.ctx.fillRect(30, 30, 50, 50);
-  }
-
-  drawPoint(): void {
-    this.ctx.beginPath();
-    this.ctx.arc(100, 100, 30, 0, 2 * Math.PI);
-    this.ctx.fillStyle = 'darkred';
-    this.ctx.fill();
-  }
-
-  drawBorder(): void {
-    this.ctx.beginPath();
-    this.ctx.moveTo(0, 0);
-    this.ctx.lineTo(400, 0);
-    this.ctx.lineTo(400, 300);
-    this.ctx.lineTo(0, 300);
-    this.ctx.lineTo(0, 0);
-    this.ctx.stroke();
-  }
-
   public run(): void
   {
     if ( !this.initialized )
@@ -467,6 +446,8 @@ export class AppComponent implements AfterViewInit {
 
       if (!this.initialize()) { return; }
 
+
+
       this.initialized = true;
     }
 
@@ -474,7 +455,7 @@ export class AppComponent implements AfterViewInit {
     {
       this.calculateFrame( 1 + this.frameSkip );
 
-      console.log(this.registerPC);
+      console.log(this.registerPC, this.registerA, this.registerX, this.registerY);
 
       const imageData = new ImageData(this.pixelBuffer, 240, 224);
       this.ctx.putImageData(imageData, 0, 0);
@@ -982,7 +963,7 @@ export class AppComponent implements AfterViewInit {
                 break;
 
               case 0x88: // DEY
-                y--;
+                y--; if (y < -128) { y = 127; }
                 flagN = y < 0;
                 flagZ = y === 0;
                 break;
@@ -1452,13 +1433,13 @@ export class AppComponent implements AfterViewInit {
                   break;
 
                 case 0xC8:  // INY
-                  y++;
+                  y++; if (y > 127) { y = -128; }
                   flagN = y < 0;
                   flagZ = y === 0;
                   break;
 
                 case 0xE8:  // INX
-                  x++;
+                  x++; if (x > 127) { x = -128; }
                   flagN = x < 0;
                   flagZ = x === 0;
                   break;
@@ -1500,7 +1481,7 @@ export class AppComponent implements AfterViewInit {
                   break;
 
                 case 0xCA:  // DEX
-                  x--;
+                  x--; if (x < -128) { x = 127; }
                   flagN = x < 0;
                   flagZ = x === 0;
                   break;
@@ -1683,11 +1664,11 @@ export class AppComponent implements AfterViewInit {
                   break;
 
                 case 0xC0: // DEC
-                  tmp2 = (tmp - 1);
+                  tmp2 = (tmp - 1); if (tmp2 < -128) { tmp2 = 128; }
                   break;
 
                 case 0xE0: // INC
-                  tmp2 = (tmp + 1);
+                  tmp2 = (tmp + 1); if (tmp2 > 127) { tmp2 = -128; }
                   break;
               }
 

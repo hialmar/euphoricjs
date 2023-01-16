@@ -6,14 +6,10 @@
     #myCanvas
     width="400"
     height="300"
-    (mousedown)="startDrawing($event)"
-    (mouseup)="stopDrawing($event)"
-    (mousemove)="keepDrawing($event)"
   ></canvas>
 </p>
 
 <p>
-  <button (click)="clickMe()">Click Me</button>
   <button (click)="startTimer()">Start Timer</button>
   <button (click)="pauseTimer()">Pause Timer</button>
   {{time}} {{registerPC}} {{registerA}} {{registerX}} {{registerY}} {{registerS}}

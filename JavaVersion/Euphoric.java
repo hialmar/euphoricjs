@@ -31,6 +31,8 @@ public class Euphoric extends Panel implements WindowListener, Runnable, KeyList
     private boolean drawBorders = true;
     private int frameSkip = 0;
 
+    private PrintStream printStream;
+
     public static void main(String[] args)
     {
         Euphoric oric = new Euphoric();
@@ -175,14 +177,20 @@ public class Euphoric extends Panel implements WindowListener, Runnable, KeyList
 
             if( !initialize() ) return;
 
-            initialized = true;
+          try {
+            printStream = new PrintStream(new FileOutputStream("instructions.txt"));
+          } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+
+          initialized = true;
         }
 
         while( !exit )
         {
             calculateFrame( 1 + frameSkip );
 
-            //System.out.println(this.registerPC);
+            //System.out.println(this.registerPC+" "+this.registerA+" "+this.registerX+" "+this.registerY);
 
             Graphics gfx = getGraphics();
             if( gfx != null )
@@ -834,7 +842,10 @@ public class Euphoric extends Panel implements WindowListener, Runnable, KeyList
 
                     if( ( opcode & 0xC0 ) == 0x80 )
                     {
+
                         remaining_cycles = 1;
+
+                        printStream.println(hexToString(opcode,2));
 
                         switch( opcode & 0xFF )
                         {
@@ -1107,6 +1118,8 @@ public class Euphoric extends Panel implements WindowListener, Runnable, KeyList
                     {
                         boolean rmw = false;
                         remaining_cycles = 0;
+
+                        printStream.println(hexToString(opcode, 2));
 
                         switch( opcode & 0x1F ) // addressing mode
                         {
